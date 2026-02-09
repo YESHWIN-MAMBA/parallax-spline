@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>3D Parallax Scroll Page</title>
+    <style>
+      :root {
+        --bg: #05060a;
+        --text: #e9ecff;
+        --muted: rgba(233, 236, 255, 0.72);
+        --glass: rgba(10, 12, 18, 0.55);
+        --stroke: rgba(255, 255, 255, 0.12);
+        --btn: #0b63ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial;
+        background:
+          radial-gradient(
+            1200px 900px at 50% 10%,
+            rgba(90, 110, 255, 0.12),
+            transparent 55%
+          ),
+          radial-gradient(
+            900px 700px at 80% 60%,
+            rgba(0, 255, 180, 0.08),
+            transparent 55%
+          ),
+          radial-gradient(
+            900px 700px at 20% 40%,
+            rgba(255, 0, 200, 0.08),
+            transparent 55%
+          ),
+          var(--bg);
+        overflow-x: hidden;
+      }
+
+      /* fixed 3D canvas */
+      #stage {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        z-index: 0;
+      }
+
+      /* top header */
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        padding: 18px 20px;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+      }
+      .nav {
+        width: min(1200px, 92vw);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        pointer-events: auto;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        user-select: none;
+      }
+      .dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: conic-gradient(
+          from 210deg,
+          #00ffb8,
+          #7a5cff,
+          #ff2bd6,
+          #ffd400,
+          #00ffb8
+        );
+        box-shadow: 0 0 18px rgba(122, 92, 255, 0.35);
+      }
+      nav.links {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        color: rgba(233, 236, 255, 0.82);
+        font-size: 14px;
+        flex-wrap: wrap;
+      }
+      nav.links a {
+        color: inherit;
+        text-decoration: none;
+        padding: 10px 10px;
+        border-radius: 999px;
+      }
+      nav.links a:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(233, 236, 255, 1);
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .pill {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(10, 12, 18, 0.55);
+        backdrop-filter: blur(10px);
+        color: rgba(233, 236, 255, 0.9);
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+      .pill.primary {
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.14),
+          rgba(255, 255, 255, 0.06)
+        );
+        border-color: rgba(255, 255, 255, 0.18);
+        color: #fff;
+      }
+      @media (max-width: 920px) {
+        nav.links {
+          display: none;
+        }
+      }
+
+      main {
+        position: relative;
+        z-index: 10;
+      }
+
+      /* hero */
+      .hero {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 18vh 18px 10vh;
+        text-align: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(40px, 5.2vw, 74px);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        text-shadow: 0 8px 40px rgba(0, 0, 0, 0.55);
+      }
+      .lead {
+        margin: 18px auto 0;
+        max-width: 720px;
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: clamp(14px, 1.4vw, 16px);
+      }
+      .cta {
+        margin-top: 22px;
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(10, 12, 18, 0.6);
+        backdrop-filter: blur(12px);
+        color: #fff;
+        padding: 12px 16px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 14px;
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        box-shadow: 0 14px 60px rgba(0, 0, 0, 0.35);
+      }
+      .btn.primary {
+        background: linear-gradient(
+          180deg,
+          rgba(11, 99, 255, 0.95),
+          rgba(11, 99, 255, 0.62)
+        );
+        border-color: rgba(11, 99, 255, 0.55);
+        box-shadow: 0 12px 46px rgba(11, 99, 255, 0.22);
+      }
+
+      .hint {
+        margin-top: 34px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        align-items: center;
+        color: rgba(233, 236, 255, 0.62);
+        font-size: 13px;
+        user-select: none;
+        pointer-events: none;
+      }
+      .mouse {
+        width: 18px;
+        height: 28px;
+        border-radius: 999px;
+        border: 1px solid rgba(233, 236, 255, 0.35);
+        position: relative;
+      }
+      .mouse:after {
+        content: "";
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        width: 3px;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(233, 236, 255, 0.65);
+        transform: translateX(-50%);
+        animation: wheel 1.25s infinite ease-in-out;
+      }
+      @keyframes wheel {
+        0% {
+          opacity: 0.9;
+          transform: translate(-50%, 0);
+        }
+        100% {
+          opacity: 0.1;
+          transform: translate(-50%, 10px);
+        }
+      }
+
+      /* sections */
+      section.block {
+        padding: 90px 18px;
+        display: flex;
+        justify-content: center;
+      }
+      .panel {
+        width: min(1150px, 92vw);
+        border: 1px solid var(--stroke);
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        border-radius: 22px;
+        padding: 28px;
+        box-shadow: 0 30px 110px rgba(0, 0, 0, 0.55);
+      }
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 22px;
+      }
+      .panel p {
+        margin: 0;
+        color: rgba(233, 236, 255, 0.72);
+        line-height: 1.65;
+      }
+      .grid {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .tile {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 16px;
+        padding: 16px;
+        min-height: 92px;
+      }
+      .tile strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+      .tile span {
+        color: rgba(233, 236, 255, 0.68);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      footer {
+        padding: 70px 18px 110px;
+        display: flex;
+        justify-content: center;
+      }
+      .footer {
+        width: min(1150px, 92vw);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(10, 12, 18, 0.35);
+        border-radius: 22px;
+        padding: 22px;
+        color: rgba(233, 236, 255, 0.65);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .footer a {
+        color: rgba(233, 236, 255, 0.75);
+        text-decoration: none;
+      }
+      .footer a:hover {
+        color: #fff;
+      }
+      .tiny {
+        font-size: 13px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="stage"></canvas>
+
+    <header>
+      <div class="nav">
+        <div class="brand"><span class="dot"></span><span>My3D</span></div>
+
+        <nav class="links" aria-label="Sections">
+          <a href="#products">Products</a>
+          <a href="#resources">Resources</a>
+          <a href="#community">Community</a>
+          <a href="#contact">Get in touch</a>
+        </nav>
+
+        <div class="actions">
+          <a class="pill" href="#contact">Log in</a>
+          <a class="pill primary" href="#contact">Get Started</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" id="home">
+        <div>
+          <h1>The all-in-one platform<br />for 3D and design</h1>
+          <p class="lead">
+            Floating, interactive 3D blocks with scroll-based depth + subtle
+            parallax. Hover objects to highlight, click to “push” them.
+          </p>
+
+          <div class="cta">
+            <a class="btn primary" href="#products" id="cta"
+              >Explore products →</a
+            >
+            <a class="btn" href="#" id="randomize">Shuffle objects</a>
+          </div>
+
+          <div class="hint">
+            <div class="mouse" aria-hidden="true"></div>
+            <span>Scroll to explore depth</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="products">
+        <div class="panel">
+          <h2>Products</h2>
+          <p>
+            Showcase your feature set. Add cards, screenshots, pricing blocks,
+            or a product grid.
+          </p>
+          <div class="grid">
+            <div class="tile">
+              <strong>3D scenes</strong
+              ><span>Embed interactive scenes as hero moments.</span>
+            </div>
+            <div class="tile">
+              <strong>Design system</strong
+              ><span>Reusable UI + motion patterns across pages.</span>
+            </div>
+            <div class="tile">
+              <strong>Templates</strong
+              ><span>Start from presets and customize quickly.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="resources">
+        <div class="panel">
+          <h2>Resources</h2>
+          <p>
+            Docs, guides, tutorials, and examples. Link out to your knowledge
+            base.
+          </p>
+          <div class="grid">
+            <div class="tile">
+              <strong>Docs</strong
+              ><span>How to integrate 3D into your site.</span>
+            </div>
+            <div class="tile">
+              <strong>Tutorials</strong
+              ><span>Step-by-step guides for common effects.</span>
+            </div>
+            <div class="tile">
+              <strong>Examples</strong
+              ><span>Real use cases and inspiration.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="community">
+        <div class="panel">
+          <h2>Community</h2>
+          <p>
+            Highlight community projects, forum, Discord, events, or featured
+            work.
+          </p>
+          <div class="grid">
+            <div class="tile">
+              <strong>Showcase</strong
+              ><span>Feature top creations and templates.</span>
+            </div>
+            <div class="tile">
+              <strong>Events</strong
+              ><span>Announce meetups and livestreams.</span>
+            </div>
+            <div class="tile">
+              <strong>Support</strong><span>Help channels and Q&A.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="contact">
+        <div class="panel">
+          <h2>Get in touch</h2>
+          <p>
+            Drop in a form here (or embed your provider). This section is ready
+            for contact details.
+          </p>
+          <div class="grid">
+            <div class="tile">
+              <strong>Email</strong><span>hello@yourdomain.com</span>
+            </div>
+            <div class="tile">
+              <strong>Sales</strong><span>Book a demo / request pricing</span>
+            </div>
+            <div class="tile">
+              <strong>Location</strong><span>Your City, Country</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <div class="footer tiny">
+          <div>
+            <strong style="color: rgba(233, 236, 255, 0.9)">My3D</strong><br />
+            © <span id="year"></span> All rights reserved.
+          </div>
+          <div style="display: flex; gap: 14px; flex-wrap: wrap">
+            <a href="#home">Home</a>
+            <a href="#products">Products</a>
+            <a href="#resources">Resources</a>
+            <a href="#community">Community</a>
+            <a href="#contact">Get in touch</a>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

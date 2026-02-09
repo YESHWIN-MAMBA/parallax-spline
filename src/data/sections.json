@@ -1,0 +1,156 @@
+{
+  "site": {
+    "brand": "Build By MAMBA",
+    "tagline": "Development & Design",
+    "ctaPrimaryLabel": "View our work →",
+    "ctaPrimaryHref": "#products",
+    "ctaSecondaryLabel": "I'm feeling Lucky",
+    "ctaSecondaryAction": "randomize"
+  },
+  "nav": [
+    { "label": "Products", "href": "#products" },
+    { "label": "Resources", "href": "#resources" },
+    { "label": "Community", "href": "#community" },
+    { "label": "Get in touch", "href": "#contact" }
+  ],
+  "hero": {
+    "titleLines": ["High-impact websites", "built to convert"],
+    "lead": "Mamba is a marketing-focused web development studio. We design and build fast, accessible, conversion-first sites—then support you with experiments, analytics, and iterative improvements."
+  },
+  "sections": [
+    {
+      "id": "products",
+      "title": "Products",
+      "subtitle": "What we build for ambitious brands. Clean design, strong performance, and measurable outcomes.",
+      "cards": [
+        {
+          "title": "Marketing Websites",
+          "text": "Modern brand sites with motion, storytelling, SEO-ready structure, and a content system that scales.",
+          "iconKey": "layout"
+        },
+        {
+          "title": "Landing Pages & Funnels",
+          "text": "Campaign-ready pages built for speed and conversions—A/B test friendly with analytics baked in.",
+          "iconKey": "rocket"
+        },
+        {
+          "title": "eCommerce (Woo / Shopify)",
+          "text": "Conversion-led storefronts, product UX, checkout improvements, subscriptions, and performance tuning.",
+          "iconKey": "cart"
+        },
+        {
+          "title": "Web Apps & Portals",
+          "text": "Member areas, dashboards, booking flows, and internal tools with clean UX and maintainable code.",
+          "iconKey": "code"
+        }
+      ]
+    },
+    {
+      "id": "resources",
+      "title": "Resources",
+      "subtitle": "Tools, process, and proof. Everything we use to ship reliably and improve continuously.",
+      "cards": [
+        {
+          "title": "Case Studies",
+          "text": "Before/after breakdowns: performance wins, conversion lifts, and design system rollouts.",
+          "iconKey": "chart"
+        },
+        {
+          "title": "Our Build Process",
+          "text": "Discovery → wireframes → UI → build → QA → launch → iterate. Transparent milestones.",
+          "iconKey": "workflow"
+        },
+        {
+          "title": "Tech Stack",
+          "text": "WordPress/Elementor, custom themes, headless builds, GSAP/Three.js, and modern tooling.",
+          "iconKey": "code"
+        },
+        {
+          "title": "Design System Kit",
+          "text": "Reusable components, spacing/type scales, and motion guidelines to keep teams aligned.",
+          "iconKey": "sparkles"
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "title": "Community",
+      "subtitle": "We collaborate with partners and share what we learn—templates, talks, and open source bits.",
+      "cards": [
+        {
+          "title": "Partner Network",
+          "text": "Designers, videographers, SEO specialists, and paid media teams—plug-in expertise when needed.",
+          "iconKey": "users"
+        },
+        {
+          "title": "Talks & Workshops",
+          "text": "Performance, UX audits, and conversion strategy sessions for marketing teams.",
+          "iconKey": "mic"
+        },
+        {
+          "title": "Open Source Snippets",
+          "text": "Reusable UI patterns and effects—like this 3D parallax hero scaffold.",
+          "iconKey": "sparkles"
+        },
+        {
+          "title": "Templates & Starters",
+          "text": "Launch faster with curated page blocks, animation patterns, and proven layouts.",
+          "iconKey": "layout"
+        }
+      ]
+    }
+  ],
+  "contact": {
+    "id": "contact",
+    "title": "Get in touch",
+    "subtitle": "Tell us what you’re building. We’ll reply with next steps, timelines, and a clear plan.",
+    "fields": [
+      {
+        "name": "name",
+        "label": "Full name",
+        "type": "text",
+        "placeholder": "Jane Doe",
+        "required": true
+      },
+      {
+        "name": "email",
+        "label": "Email",
+        "type": "email",
+        "placeholder": "jane@company.com",
+        "required": true
+      },
+      {
+        "name": "company",
+        "label": "Company",
+        "type": "text",
+        "placeholder": "Mamba Marketing",
+        "required": false
+      },
+      {
+        "name": "budget",
+        "label": "Budget range",
+        "type": "select",
+        "required": true,
+        "options": ["< £5k", "£5k–£15k", "£15k–£30k", "£30k+", "Not sure yet"]
+      },
+      {
+        "name": "message",
+        "label": "Project details",
+        "type": "textarea",
+        "placeholder": "What are you building? Goals, deadlines, and any links…",
+        "required": true
+      }
+    ],
+    "submitLabel": "Send message"
+  },
+  "footer": {
+    "left": "Build By MAMBA — Web Development & Design",
+    "links": [
+      { "label": "Top", "href": "#top" },
+      { "label": "Products", "href": "#products" },
+      { "label": "Resources", "href": "#resources" },
+      { "label": "Community", "href": "#community" },
+      { "label": "Get in touch", "href": "#contact" }
+    ]
+  }
+}
