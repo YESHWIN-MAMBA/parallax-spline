@@ -1,12 +1,11 @@
-export function Header({ brand, nav }) {
+export function Header({ brand, nav, logoUrl }) {
   return `
     <header>
       <div class="nav">
         <div class="brand">
-            <img class="logo" src="/mamba-logo.svg" alt="${escapeHtml(brand)} logo" />
-            <span>${escapeHtml(brand)}</span>
+          <img class="logo" src="${logoUrl}" alt="${escapeHtml(brand)} logo" />
+          <span>${escapeHtml(brand)}</span>
         </div>
-
 
         <nav class="links" aria-label="Sections">
           ${nav.map((n) => `<a class="navlink" href="${n.href}">${escapeHtml(n.label)}</a>`).join("")}

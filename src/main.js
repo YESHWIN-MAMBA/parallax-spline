@@ -1,4 +1,5 @@
 import "./styles.css";
+import logoUrl from "./assets/mamba-logo.svg";
 
 import data from "./data/sections.json";
 
@@ -12,7 +13,7 @@ import { startScene } from "./three/scene.js";
 const app = document.querySelector("#app");
 
 app.innerHTML = `
-  ${Header({ brand: data.site.brand, nav: data.nav })}
+  ${Header({ brand: data.site.brand, nav: data.nav, logoUrl })}
   <main>
     ${Hero(data)}
     ${data.sections.map((s) => ContentSection(s)).join("")}
