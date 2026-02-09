@@ -72,12 +72,100 @@ export function startScene({ canvas, onPopulateReady } = {}) {
       ...opts,
     });
 
+  function roundedTrianglePrism({
+    radius = 1.0, // overall size
+    depth = 0.9, // thickness (Z)
+    cornerRadius = 0.18,
+    color = 0x00ffb8,
+  }) {
+    // Equilateral triangle points (centered)
+    const h = Math.sqrt(3) * radius;
+    const p1 = new THREE.Vector2(0, (2 / 3) * h);
+    const p2 = new THREE.Vector2(-radius, (-1 / 3) * h);
+    const p3 = new THREE.Vector2(radius, (-1 / 3) * h);
+
+    // Rounded corners using quadratic curves
+    const shape = new THREE.Shape();
+
+    function lerp(a, b, t) {
+      return new THREE.Vector2(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+    }
+    function roundCorner(prev, curr, next, r) {
+      // move along edges from curr towards prev/next by factor based on r
+      const v1 = prev.clone().sub(curr).normalize();
+      const v2 = next.clone().sub(curr).normalize();
+
+      // approximate distance along edges for rounding
+      const d = r;
+      const pA = curr.clone().add(v1.multiplyScalar(d));
+      const pB = curr.clone().add(v2.multiplyScalar(d));
+      return { pA, pB, corner: curr };
+    }
+
+    const c1 = roundCorner(p3, p1, p2, cornerRadius);
+    const c2 = roundCorner(p1, p2, p3, cornerRadius);
+    const c3 = roundCorner(p2, p3, p1, cornerRadius);
+
+    shape.moveTo(c1.pA.x, c1.pA.y);
+    shape.quadraticCurveTo(c1.corner.x, c1.corner.y, c1.pB.x, c1.pB.y);
+
+    shape.lineTo(c2.pA.x, c2.pA.y);
+    shape.quadraticCurveTo(c2.corner.x, c2.corner.y, c2.pB.x, c2.pB.y);
+
+    shape.lineTo(c3.pA.x, c3.pA.y);
+    shape.quadraticCurveTo(c3.corner.x, c3.corner.y, c3.pB.x, c3.pB.y);
+
+    shape.closePath();
+
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth,
+      bevelEnabled: true,
+      bevelThickness: 0.12,
+      bevelSize: 0.1,
+      bevelSegments: 4,
+      curveSegments: 10,
+    });
+
+    // Center geometry so rotation is in-place
+    geo.center();
+
+    const mesh = new THREE.Mesh(
+      geo,
+      mkMat(color, { roughness: 0.55, clearcoat: 0.12 }),
+    );
+    mesh.userData.seed = Math.random() * 1000;
+
+    // collision radius (rough)
+    mesh.userData.r = radius * 1.1;
+
+    // spin in place
+    mesh.userData.baseSpin = {
+      x: (Math.random() * 2 - 1) * 0.22,
+      y: (Math.random() * 2 - 1) * 0.32,
+      z: (Math.random() * 2 - 1) * 0.18,
+    };
+
+    return mesh;
+  }
+
   function roundedBlock({ size = 1.5, radius = 0.35, color = 0x7a5cff }) {
     const geo = new RoundedBoxGeometry(size, size, size, 6, radius);
     const mesh = new THREE.Mesh(geo, mkMat(color));
     mesh.userData.seed = Math.random() * 1000;
+
+    // collision radius (approx)
+    mesh.userData.r = (Math.sqrt(3) * size) / 2;
+
+    // spin in place
+    mesh.userData.baseSpin = {
+      x: (Math.random() * 2 - 1) * 0.25,
+      y: (Math.random() * 2 - 1) * 0.35,
+      z: (Math.random() * 2 - 1) * 0.2,
+    };
+
     return mesh;
   }
+
   function sphere({ r = 1.05, color = 0x00ffb8 }) {
     const geo = new THREE.SphereGeometry(r, 48, 48);
     const mesh = new THREE.Mesh(
@@ -85,6 +173,13 @@ export function startScene({ canvas, onPopulateReady } = {}) {
       mkMat(color, { roughness: 0.55, clearcoat: 0.12 }),
     );
     mesh.userData.seed = Math.random() * 1000;
+    mesh.userData.r = r;
+    mesh.userData.baseSpin = {
+      x: (Math.random() * 2 - 1) * 0.25, // radians/sec
+      y: (Math.random() * 2 - 1) * 0.35,
+      z: (Math.random() * 2 - 1) * 0.2,
+    };
+
     return mesh;
   }
 
@@ -112,8 +207,10 @@ export function startScene({ canvas, onPopulateReady } = {}) {
       new THREE.SphereGeometry(1.65, 48, 48),
       mkMat(0x00ffb8, { roughness: 0.52, clearcoat: 0.1 }),
     );
-    rightGreen.position.set(3.9, -0.65, -0.55);
+    rightGreen.position.set(3.9, -0.65, -4);
     rightGreen.userData.seed = Math.random() * 1000;
+    rightGreen.userData.r = 1.65;
+    rightGreen.userData.baseSpin = { x: 0.12, y: 0.22, z: 0.08 };
 
     const midYellow = roundedBlock({
       size: 1.25,
@@ -125,40 +222,55 @@ export function startScene({ canvas, onPopulateReady } = {}) {
     const midPink = roundedBlock({ size: 1.05, radius: 0.38, color: 0xff2bd6 });
     midPink.position.set(3.1, 0.05, 1.45);
 
-    const centerGreenSmall = roundedBlock({
-      size: 1.05,
-      radius: 0.38,
+    const centerGreenSmall = roundedTrianglePrism({
+      radius: 0.78, // size
+      depth: 0.85, // thickness
+      cornerRadius: 0.16, // rounding amount
       color: 0x00ffb8,
     });
     centerGreenSmall.position.set(-0.4, -0.55, 0.55);
+
+    const placed = [];
+    placed.push(
+      bigLeft,
+      topPink,
+      topBlue,
+      rightGreen,
+      midYellow,
+      midPink,
+      centerGreenSmall,
+    );
+
+    const bounds = {
+      xMin: -7.2,
+      xMax: 7.2,
+      yMin: -3.0,
+      yMax: 3.0,
+      zMin: -8.2,
+      zMax: 1.2,
+      padding: 0.32,
+    };
 
     const extras = [];
     for (let i = 0; i < 12; i++) {
       const c = palette[(Math.random() * palette.length) | 0];
       const size = 0.55 + Math.random() * 0.85;
-      const r = 0.18 + Math.random() * 0.25;
+      const rr = 0.18 + Math.random() * 0.25;
 
       const e =
         Math.random() < 0.35
           ? sphere({ r: size * 0.52, color: c })
-          : roundedBlock({ size, radius: r, color: c });
+          : roundedBlock({ size, radius: rr, color: c });
 
-      e.position.set(
-        Math.random() * 14 - 7,
-        Math.random() * 5.8 - 2.9,
-        Math.random() * -8 + 1.2,
-      );
       e.rotation.set(
         (Math.random() - 0.5) * 0.55,
         (Math.random() - 0.5) * 0.55,
         (Math.random() - 0.5) * 0.55,
       );
 
-      // keep center clear for text
-      if (Math.abs(e.position.x) < 1.6 && Math.abs(e.position.y) < 1.0) {
-        e.position.x += e.position.x < 0 ? -2.2 : 2.2;
-        e.position.y += e.position.y < 0 ? -1.4 : 1.4;
-      }
+      placeWithNoOverlap(e, placed, bounds, 100);
+
+      placed.push(e);
       extras.push(e);
     }
 
@@ -211,25 +323,51 @@ export function startScene({ canvas, onPopulateReady } = {}) {
     { passive: true },
   );
 
-  window.addEventListener("click", () => {
-    if (!hovered) return;
+  function isUiElement(el) {
+    return !!el.closest?.(
+      "a,button,input,select,textarea,label,form,nav,header,.panel,.tile",
+    );
+  }
 
-    // existing push/pop
-    hovered.userData.impulse = 1.0;
-    hovered.material.emissiveIntensity = 0.12;
+  window.addEventListener("click", (e) => {
+    // Ignore clicks on UI
+    if (isUiElement(e.target)) return;
 
-    // NEW: random rotation "impulse"
-    // store a target angular velocity (radians/sec) that decays in the animation loop
-    const rx = (Math.random() * 2 - 1) * 2.8; // -2.8..2.8
-    const ry = (Math.random() * 2 - 1) * 3.4; // -3.4..3.4
-    const rz = (Math.random() * 2 - 1) * 2.2; // -2.2..2.2
+    // Raycast from the click position
+    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-    hovered.userData.spin = {
-      x: rx,
-      y: ry,
-      z: rz,
-    };
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(objects, false);
+    const hitObj = hits.length ? hits[0].object : null;
+    if (!hitObj) return;
+
+    hitObj.userData.impulse = 1.0;
+    hitObj.material.emissiveIntensity = 0.12;
+
+    // Stronger, visible spin burst
+    const rx = (Math.random() * 2 - 1) * 5.0;
+    const ry = (Math.random() * 2 - 1) * 6.0;
+    const rz = (Math.random() * 2 - 1) * 4.0;
+
+    hitObj.userData.spin = { x: rx, y: ry, z: rz };
   });
+
+  let lastScrollY = window.scrollY;
+  let scrollVelocity = 0; // positive/negative based on scroll direction
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      const y = window.scrollY;
+      const dy = y - lastScrollY;
+      lastScrollY = y;
+
+      // Smooth velocity (dampened)
+      scrollVelocity = scrollVelocity * 0.85 + dy * 0.15;
+    },
+    { passive: true },
+  );
 
   function scrollT() {
     const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -274,8 +412,18 @@ export function startScene({ canvas, onPopulateReady } = {}) {
       o.position.y += (o.userData._baseY + floatY - o.position.y) * 0.06;
       o.position.x += (o.userData._baseX + floatX - o.position.x) * 0.05;
 
-      o.rotation.y += dt * 0.045;
-      o.rotation.x += dt * 0.025;
+      // Persistent slow rotation (revolving)
+      const bs = o.userData.baseSpin;
+      if (bs) {
+        o.rotation.x += bs.x * dt;
+        o.rotation.y += bs.y * dt;
+        o.rotation.z += bs.z * dt;
+      }
+
+      // Scroll-driven spin (uses smoothed scrollVelocity)
+      const sv = THREE.MathUtils.clamp(scrollVelocity / 1200, -1, 1); // normalize
+      o.rotation.y += sv * 0.1;
+      o.rotation.x += sv * 0.06;
 
       // NEW: apply click spin + decay
       if (o.userData.spin) {
@@ -284,9 +432,9 @@ export function startScene({ canvas, onPopulateReady } = {}) {
         o.rotation.z += o.userData.spin.z * dt;
 
         // decay the spin smoothly
-        o.userData.spin.x *= 0.86;
-        o.userData.spin.y *= 0.86;
-        o.userData.spin.z *= 0.86;
+        o.userData.spin.x *= 0.92;
+        o.userData.spin.y *= 0.92;
+        o.userData.spin.z *= 0.92;
 
         // stop when very small
         if (
@@ -301,17 +449,56 @@ export function startScene({ canvas, onPopulateReady } = {}) {
       if (o.userData.impulse) {
         o.userData.impulse *= 0.88;
         const k = o.userData.impulse;
-        o.scale.setScalar(1 + k * 0.07);
+        const base = o.userData.targetScale ?? 1;
+        o.scale.setScalar(base * (1 + k * 0.07));
+
         o.position.z += k * -0.06;
         if (k < 0.02) {
           o.userData.impulse = 0;
-          o.scale.setScalar(1);
         }
       }
     }
 
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
+  }
+
+  function canPlace(pos, r, placed, padding = 0.28) {
+    for (const p of placed) {
+      const pr = p.userData.r ?? 1;
+      const d = pos.distanceTo(p.position);
+      if (d < r + pr + padding) return false;
+    }
+    return true;
+  }
+
+  function placeWithNoOverlap(obj, placed, bounds, tries = 80) {
+    const r = obj.userData.r ?? 1;
+
+    for (let i = 0; i < tries; i++) {
+      const pos = new THREE.Vector3(
+        THREE.MathUtils.randFloat(bounds.xMin, bounds.xMax),
+        THREE.MathUtils.randFloat(bounds.yMin, bounds.yMax),
+        THREE.MathUtils.randFloat(bounds.zMin, bounds.zMax),
+      );
+
+      // keep center clear for headline
+      const centerClear = Math.abs(pos.x) < 1.6 && Math.abs(pos.y) < 1.0;
+      if (centerClear) continue;
+
+      if (canPlace(pos, r, placed, bounds.padding)) {
+        obj.position.copy(pos);
+        return true;
+      }
+    }
+
+    // if we fail, we still place it (but far back) rather than dropping it
+    obj.position.set(
+      THREE.MathUtils.randFloat(bounds.xMin, bounds.xMax),
+      THREE.MathUtils.randFloat(bounds.yMin, bounds.yMax),
+      bounds.zMin,
+    );
+    return false;
   }
 
   populate();
