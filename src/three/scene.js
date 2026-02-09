@@ -213,8 +213,22 @@ export function startScene({ canvas, onPopulateReady } = {}) {
 
   window.addEventListener("click", () => {
     if (!hovered) return;
+
+    // existing push/pop
     hovered.userData.impulse = 1.0;
     hovered.material.emissiveIntensity = 0.12;
+
+    // NEW: random rotation "impulse"
+    // store a target angular velocity (radians/sec) that decays in the animation loop
+    const rx = (Math.random() * 2 - 1) * 2.8; // -2.8..2.8
+    const ry = (Math.random() * 2 - 1) * 3.4; // -3.4..3.4
+    const rz = (Math.random() * 2 - 1) * 2.2; // -2.2..2.2
+
+    hovered.userData.spin = {
+      x: rx,
+      y: ry,
+      z: rz,
+    };
   });
 
   function scrollT() {
@@ -262,6 +276,27 @@ export function startScene({ canvas, onPopulateReady } = {}) {
 
       o.rotation.y += dt * 0.045;
       o.rotation.x += dt * 0.025;
+
+      // NEW: apply click spin + decay
+      if (o.userData.spin) {
+        o.rotation.x += o.userData.spin.x * dt;
+        o.rotation.y += o.userData.spin.y * dt;
+        o.rotation.z += o.userData.spin.z * dt;
+
+        // decay the spin smoothly
+        o.userData.spin.x *= 0.86;
+        o.userData.spin.y *= 0.86;
+        o.userData.spin.z *= 0.86;
+
+        // stop when very small
+        if (
+          Math.abs(o.userData.spin.x) < 0.01 &&
+          Math.abs(o.userData.spin.y) < 0.01 &&
+          Math.abs(o.userData.spin.z) < 0.01
+        ) {
+          o.userData.spin = null;
+        }
+      }
 
       if (o.userData.impulse) {
         o.userData.impulse *= 0.88;
